@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 8220877932251717017}
   - component: {fileID: 8220877932251717016}
   - component: {fileID: 8220877932251717015}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Bun
-  m_TagString: Grabbable
+  m_TagString: Bun
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -10,6 +10,8 @@ TagManager:
   - Bun
   - CookedHotdog
   - CookedBun
+  - Ketchup
+  - Mustard
   layers:
   - Default
   - TransparentFX
@@ -19,8 +21,8 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
+  - Interactable
+  - NonInteractable
   - 
   - 
   - 

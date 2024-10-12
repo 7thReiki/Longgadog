@@ -11,6 +11,9 @@ public class GrillStation : MonoBehaviour
     public Sprite cookedHotdogSprite;  // Sprite for the cooked hotdog
     public Sprite cookedBunSprite;     // Sprite for the cooked bun
 
+    public int nonInteractableLayer;
+    public int interactableLayer;
+
     void Update()
     {
         if (itemsOnGrill.Count > 0)
@@ -28,12 +31,12 @@ public class GrillStation : MonoBehaviour
                     // Check the type of item and its cooking time
                     if (item.CompareTag("Hotdog") && itemCookTimers[item] >= 5f)  // 5s for hotdog
                     {
-                        CookItem(item, cookedHotdogSprite);
+                        CookItem(item, cookedHotdogSprite, "CookedHotdog");
                         cookedItems.Add(item);  // Mark this item as cooked
                     }
                     else if (item.CompareTag("Bun") && itemCookTimers[item] >= 3f)  // 3s for bun
                     {
-                        CookItem(item, cookedBunSprite);
+                        CookItem(item, cookedBunSprite, "CookedBun");
                         cookedItems.Add(item);  // Mark this item as cooked
                     }
                 }
@@ -57,6 +60,9 @@ public class GrillStation : MonoBehaviour
             itemCookTimers[item] = 0f;  // Initialize cooking time for this item
             item.transform.SetParent(transform);  // Attach item to the grill station
             item.transform.localPosition = new Vector3(0, 0, 0);  // Optional: adjust position on grill
+
+            item.layer = nonInteractableLayer;
+            Debug.Log(item.name + " is placed on the grill and set to layer: " + LayerMask.LayerToName(nonInteractableLayer));
         }
         else
         {
@@ -64,13 +70,18 @@ public class GrillStation : MonoBehaviour
         }
     }
 
+
     // Method to cook an item and change its sprite
-    void CookItem(GameObject item, Sprite cookedSprite)
+    void CookItem(GameObject item, Sprite cookedSprite, string newTag)
     {
         // Change the item to its "cooked" version
         if (item != null && item.GetComponent<SpriteRenderer>() != null)
         {
             item.GetComponent<SpriteRenderer>().sprite = cookedSprite;
+            item.tag = newTag;
+
+            item.layer = interactableLayer;
+
         }
         Debug.Log(item.name + " is cooked!");
     }
