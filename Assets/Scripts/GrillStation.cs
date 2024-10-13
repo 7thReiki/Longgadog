@@ -14,6 +14,18 @@ public class GrillStation : MonoBehaviour
     public int nonInteractableLayer;
     public int interactableLayer;
 
+    public Transform[] hotdogSlots;   // Array for hotdog slots
+    public Transform[] bunSlots;      // Array for bun slots
+    private bool[] hotdogSlotOccupied;  // Flags for hotdog slot occupancy
+    private bool[] bunSlotOccupied;     // Flags for bun slot occupancy
+
+    void Start()
+    {
+        // Initialize the occupancy flags
+        hotdogSlotOccupied = new bool[hotdogSlots.Length];
+        bunSlotOccupied = new bool[bunSlots.Length];
+    }
+
     void Update()
     {
         if (itemsOnGrill.Count > 0)
@@ -47,6 +59,7 @@ public class GrillStation : MonoBehaviour
             {
                 itemsOnGrill.Remove(cookedItem);
                 itemCookTimers.Remove(cookedItem);
+                ReleaseSlot(cookedItem);  // Release the occupied slot
             }
         }
     }
@@ -54,22 +67,49 @@ public class GrillStation : MonoBehaviour
     // Method to place an item on the grill
     public void PlaceItem(GameObject item)
     {
-        if (itemsOnGrill.Count < maxItems && item != null)
+        if (item.CompareTag("Hotdog"))
         {
-            itemsOnGrill.Add(item);
-            itemCookTimers[item] = 0f;  // Initialize cooking time for this item
-            item.transform.SetParent(transform);  // Attach item to the grill station
-            item.transform.localPosition = new Vector3(0, 0, 0);  // Optional: adjust position on grill
-
-            item.layer = nonInteractableLayer;
-            Debug.Log(item.name + " is placed on the grill and set to layer: " + LayerMask.LayerToName(nonInteractableLayer));
+            // Check for available hotdog slots
+            for (int i = 0; i < hotdogSlots.Length; i++)
+            {
+                if (!hotdogSlotOccupied[i])
+                {
+                    hotdogSlotOccupied[i] = true;  // Mark the slot as occupied
+                    itemsOnGrill.Add(item);
+                    itemCookTimers[item] = 0f;  // Initialize cooking time for this item
+                    item.transform.SetParent(hotdogSlots[i]);  // Attach item to the specific hotdog slot
+                    item.transform.localPosition = Vector3.zero;  // Adjust position on grill
+                    item.layer = nonInteractableLayer;
+                    Debug.Log(item.name + " is placed on the grill in hotdog slot: " + i);
+                    return;
+                }
+            }
+            Debug.Log("No free hotdog slots available!");
+        }
+        else if (item.CompareTag("Bun"))
+        {
+            // Check for available bun slots
+            for (int i = 0; i < bunSlots.Length; i++)
+            {
+                if (!bunSlotOccupied[i])
+                {
+                    bunSlotOccupied[i] = true;  // Mark the slot as occupied
+                    itemsOnGrill.Add(item);
+                    itemCookTimers[item] = 0f;  // Initialize cooking time for this item
+                    item.transform.SetParent(bunSlots[i]);  // Attach item to the specific bun slot
+                    item.transform.localPosition = Vector3.zero;  // Adjust position on grill
+                    item.layer = nonInteractableLayer;
+                    Debug.Log(item.name + " is placed on the grill in bun slot: " + i);
+                    return;
+                }
+            }
+            Debug.Log("No free bun slots available!");
         }
         else
         {
-            Debug.Log("Grill is full! Max items: " + maxItems);
+            Debug.Log("Item cannot be placed on the grill!");
         }
     }
-
 
     // Method to cook an item and change its sprite
     void CookItem(GameObject item, Sprite cookedSprite, string newTag)
@@ -82,7 +122,34 @@ public class GrillStation : MonoBehaviour
 
             item.layer = interactableLayer;
 
+            Debug.Log(item.name + " is cooked!");
         }
-        Debug.Log(item.name + " is cooked!");
+    }
+
+    // Method to release the slot when an item is taken
+    private void ReleaseSlot(GameObject item)
+    {
+        if (item.CompareTag("CookedHotdog"))
+        {
+            for (int i = 0; i < hotdogSlots.Length; i++)
+            {
+                if (hotdogSlots[i].transform.childCount == 0) // Assuming the cooked item was placed in the slot
+                {
+                    hotdogSlotOccupied[i] = false; // Mark the slot as free
+                    Debug.Log("Hotdog slot " + i + " is now free.");
+                }
+            }
+        }
+        else if (item.CompareTag("CookedBun"))
+        {
+            for (int i = 0; i < bunSlots.Length; i++)
+            {
+                if (bunSlots[i].transform.childCount == 0) // Assuming the cooked item was placed in the slot
+                {
+                    bunSlotOccupied[i] = false; // Mark the slot as free
+                    Debug.Log("Bun slot " + i + " is now free.");
+                }
+            }
+        }
     }
 }

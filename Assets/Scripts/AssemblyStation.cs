@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class AssemblyStation : MonoBehaviour
 {
+    public GameObject condimentKetchup;
+    public GameObject condimentMustard;
+    public Transform ketchupSpot;
+    public Transform mustardSpot;
+
     private GameObject bunOnStation;
     private GameObject hotdogOnStation;
     private GameObject condimentOnStation;
@@ -14,9 +19,14 @@ public class AssemblyStation : MonoBehaviour
 
     public Customer currentCustomer;
 
+    private Vector3 originalCondimentPos;
+
     // Start is called before the first frame update
     void Start()
     {
+        SpawnMustard();
+        SpawnKetchup();
+
         currentCustomer = new GameObject("Customer").AddComponent<Customer>();
         currentCustomer.SetRandomOrder();
         Debug.Log("Customer order: " + currentCustomer.order);
@@ -37,19 +47,18 @@ public class AssemblyStation : MonoBehaviour
         {
             bunOnStation = item;
             item.transform.position = bunSpot.position;
-            item.transform.SetParent(bunSpot);
+            /*item.transform.SetParent(bunSpot);*/
         }
         else if (item.CompareTag("CookedHotdog") && hotdogOnStation == null && bunOnStation != null)
         {
             hotdogOnStation = item;
             item.transform.position = hotdogSpot.position;
-            item.transform.SetParent(hotdogSpot);
+            /*item.transform.SetParent(hotdogSpot);*/
         }
         else if ((item.CompareTag("Ketchup") || item.CompareTag("Mustard")) && condimentOnStation == null && hotdogOnStation != null)
         {
             condimentOnStation = item;
             item.transform.position = condimentSpot.position;
-            item.transform.SetParent(condimentSpot);
         }
         else
         {
@@ -70,6 +79,16 @@ public class AssemblyStation : MonoBehaviour
         {
             currentCustomer.ReceiveOrder();  // Serve the current customer
             Debug.Log("Order served: " + assembledHotdog);
+            DestroyAssemblyItems();
+
+            if (condimentOnStation.CompareTag("Ketchup"))
+            {
+                SpawnKetchup();
+            }
+            else if (condimentOnStation.CompareTag("Mustard"))
+            {
+                SpawnMustard();
+            }
         }
         else
         {
@@ -87,28 +106,36 @@ public class AssemblyStation : MonoBehaviour
         hotdogOnStation = null;
         condimentOnStation = null;
 
-        if(bunSpot.childCount > 0)
+        currentCustomer = new GameObject("Customer").AddComponent<Customer>();
+        currentCustomer.SetRandomOrder();
+        Debug.Log("Customer order: " + currentCustomer.order);
+    }
+
+    private void DestroyAssemblyItems()
+    {
+        if (bunOnStation != null)
         {
-            foreach(Transform child in bunSpot)
-            {
-                Destroy(child.gameObject);
-            }
+            Destroy(bunOnStation);
         }
 
-        if(hotdogSpot.childCount > 0)
+        if (hotdogOnStation != null)
         {
-            foreach(Transform child in hotdogSpot)
-            {
-                Destroy(child.gameObject);
-            }
+            Destroy(hotdogOnStation);
         }
 
-        if(condimentSpot.childCount > 0)
+        if (condimentOnStation != null)
         {
-            foreach(Transform child in condimentSpot)
-            {
-                /*Destroy(child.gameObject);*/
-            }
+            Destroy(condimentOnStation);
         }
+    }
+
+    private void SpawnKetchup()
+    {
+        Instantiate(condimentKetchup, ketchupSpot.position, transform.rotation);
+    }
+
+    private void SpawnMustard()
+    {
+        Instantiate(condimentMustard, mustardSpot.position, transform.rotation);
     }
 }

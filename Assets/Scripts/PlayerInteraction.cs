@@ -10,7 +10,6 @@ public class PlayerInteraction : MonoBehaviour
 
     public float rangeRadius = 0.5f;
 
-
     void Update()
     {
         if (Input.GetKeyDown(interactKey))
@@ -23,6 +22,7 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else if (heldItem.CompareTag("CookedHotdog") || heldItem.CompareTag("CookedBun") || heldItem.CompareTag("Ketchup") || heldItem.CompareTag("Mustard"))
                 {
+                    // Call ReleaseSlot before placing the item on assembly station
                     PlaceItemOnAssemblyStation(); // Place on assembly station if cooked
                 }
             }
@@ -38,13 +38,37 @@ public class PlayerInteraction : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, rangeRadius);
         foreach (var hit in hits)
         {
-            // Only allow grabbing items that are on the 'interactableLayer'
-            if ((hit.CompareTag("Hotdog") || hit.CompareTag("Bun") || hit.CompareTag("CookedHotdog") || hit.CompareTag("CookedBun") || hit.CompareTag("Ketchup") || hit.CompareTag("Mustard")) && hit.gameObject.layer == interactableLayer)
+            // Check if the hit object is a hotdog, bun, or a cooked item, and if it's interactable
+            if ((hit.CompareTag("Hotdog") || hit.CompareTag("Bun") ||
+                 hit.CompareTag("CookedHotdog") || hit.CompareTag("CookedBun") ||
+                 hit.CompareTag("Ketchup") || hit.CompareTag("Mustard")) &&
+                hit.gameObject.layer == interactableLayer)
             {
+
+                // If it's a raw item, check the StorageRoom for removal
+                if (hit.CompareTag("Hotdog") || hit.CompareTag("Bun"))
+                {
+                    StorageRoom storageRoom = hit.GetComponentInParent<StorageRoom>();
+                    if (storageRoom != null)
+                    {
+                        if (hit.CompareTag("Hotdog"))
+                        {
+                            storageRoom.RemoveHotdog(); // Remove hotdog from storage
+                        }
+                        else if (hit.CompareTag("Bun"))
+                        {
+                            storageRoom.RemoveBun(); // Remove bun from storage
+                        }
+                    }
+                }
+
+                hit.transform.SetParent(null); // This ensures the item is no longer considered on the station
+
+                // Hold the item in the player’s hand
                 heldItem = hit.gameObject;
-                heldItem.transform.SetParent(transform);
-                heldItem.transform.localPosition = Vector3.zero;
-                break;
+                heldItem.transform.SetParent(transform); // Attach to player
+                heldItem.transform.localPosition = Vector3.zero; // Reset position to player's local
+                break; // Exit loop once an item is grabbed
             }
         }
     }
@@ -71,7 +95,7 @@ public class PlayerInteraction : MonoBehaviour
         foreach (var hit in hits)
         {
             AssemblyStation assemblyStation = hit.GetComponent<AssemblyStation>();
-            if(assemblyStation != null)
+            if (assemblyStation != null)
             {
                 assemblyStation.PlaceItem(heldItem);
                 heldItem.transform.SetParent(null);
@@ -80,6 +104,5 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
     }
-
 
 }
