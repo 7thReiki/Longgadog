@@ -4,11 +4,18 @@ public class PlayerInteraction : MonoBehaviour
 {
     private GameObject heldItem;
     public KeyCode interactKey = KeyCode.E;
+    public KeyCode dropKey = KeyCode.Q;  // Key for dropping items
+    public KeyCode trashKey = KeyCode.R; // Key for throwing items into the trash bin
 
     public int interactableLayer;     // Layer where items can be interacted with (cooked items)
     public int nonInteractableLayer;  // Layer where items cannot be interacted with (raw items)
 
     public float rangeRadius = 0.5f;
+    public Transform dropPosition;  // The position where the item will be dropped
+    public Transform holdPosition; // New transform for holding items
+
+    private bool isNearTrash = false; // Tracks if player is near the trash bin
+    private TrashBin nearbyTrashBin;  // Reference to the nearby trash bin
 
     void Update()
     {
@@ -18,19 +25,46 @@ public class PlayerInteraction : MonoBehaviour
             {
                 if (heldItem.CompareTag("Hotdog") || heldItem.CompareTag("Bun"))
                 {
-                    PlaceItemOnGrill(); // Place on grill if raw
+                    PlaceItemOnGrill();
                 }
-                else if (heldItem.CompareTag("CookedHotdog") || heldItem.CompareTag("CookedBun") || heldItem.CompareTag("Ketchup") || heldItem.CompareTag("Mustard"))
+                else if (heldItem.CompareTag("CookedHotdog") || heldItem.CompareTag("CookedBun") ||
+                         heldItem.CompareTag("Ketchup") || heldItem.CompareTag("Mustard"))
                 {
-                    // Call ReleaseSlot before placing the item on assembly station
-                    PlaceItemOnAssemblyStation(); // Place on assembly station if cooked
+                    PlaceItemOnAssemblyStation();
                 }
             }
             else
             {
-                GrabItem(); // Grab an item if not holding one
+                RemoveItemFromGrill();
+                if (heldItem == null)
+                {
+                    GrabItem();
+                }
             }
         }
+
+        if (Input.GetKeyDown(dropKey) && heldItem != null)
+        {
+            DropItem();
+        }
+
+        if (Input.GetKey(trashKey) && heldItem != null && isNearTrash)
+        {
+            TrashItem();
+        }
+
+        // Update the held item position based on the player's facing direction
+        if (heldItem != null)
+        {
+            UpdateHeldItemPosition();
+        }
+    }
+
+    void UpdateHeldItemPosition()
+    {
+        // Set the held item position to the holdPosition
+        heldItem.transform.position = holdPosition.position;
+        heldItem.transform.rotation = holdPosition.rotation; // Optional: set the rotation to match the hold position
     }
 
     void GrabItem()
@@ -38,14 +72,11 @@ public class PlayerInteraction : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, rangeRadius);
         foreach (var hit in hits)
         {
-            // Check if the hit object is a hotdog, bun, or a cooked item, and if it's interactable
             if ((hit.CompareTag("Hotdog") || hit.CompareTag("Bun") ||
                  hit.CompareTag("CookedHotdog") || hit.CompareTag("CookedBun") ||
                  hit.CompareTag("Ketchup") || hit.CompareTag("Mustard")) &&
                 hit.gameObject.layer == interactableLayer)
             {
-
-                // If it's a raw item, check the StorageRoom for removal
                 if (hit.CompareTag("Hotdog") || hit.CompareTag("Bun"))
                 {
                     StorageRoom storageRoom = hit.GetComponentInParent<StorageRoom>();
@@ -53,16 +84,16 @@ public class PlayerInteraction : MonoBehaviour
                     {
                         if (hit.CompareTag("Hotdog"))
                         {
-                            storageRoom.RemoveHotdog(); // Remove hotdog from storage
+                            storageRoom.RemoveHotdog();
                         }
                         else if (hit.CompareTag("Bun"))
                         {
-                            storageRoom.RemoveBun(); // Remove bun from storage
+                            storageRoom.RemoveBun();
                         }
                     }
                 }
 
-                hit.transform.SetParent(null); // This ensures the item is no longer considered on the station
+                hit.transform.SetParent(null);
 
                 // Hold the item in the player’s hand
                 heldItem = hit.gameObject;
@@ -81,6 +112,12 @@ public class PlayerInteraction : MonoBehaviour
             GrillStation grillStation = hit.GetComponent<GrillStation>();
             if (grillStation != null)
             {
+                if (grillStation.IsGrillOccupied())
+                {
+                    Debug.Log("Cannot place item on grill, it's already occupied!");
+                    return;
+                }
+
                 grillStation.PlaceItem(heldItem);
                 heldItem.transform.SetParent(null);
                 heldItem = null;
@@ -105,4 +142,64 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
+    void RemoveItemFromGrill()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, rangeRadius);
+        foreach (var hit in hits)
+        {
+            GrillStation grillStation = hit.GetComponent<GrillStation>();
+            if (grillStation != null && heldItem == null)
+            {
+                GameObject itemOnGrill = grillStation.GetCookedItem();
+                if (itemOnGrill != null)
+                {
+                    heldItem = itemOnGrill;
+                    itemOnGrill.transform.SetParent(transform);
+                    itemOnGrill.transform.localPosition = Vector3.zero;
+
+                    grillStation.ReleaseSlot(itemOnGrill);
+                    break;
+                }
+            }
+        }
+    }
+
+    void DropItem()
+    {
+        if (heldItem != null)
+        {
+            heldItem.transform.SetParent(null);
+            heldItem.transform.position = dropPosition.position;
+            heldItem = null;
+            Debug.Log("Item dropped.");
+        }
+    }
+
+    void TrashItem()
+    {
+        if (heldItem != null && nearbyTrashBin != null)
+        {
+            nearbyTrashBin.TrashObject(heldItem);
+            heldItem = null;
+            Debug.Log("Item trashed.");
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("TrashBin"))
+        {
+            isNearTrash = true;
+            nearbyTrashBin = collision.gameObject.GetComponent<TrashBin>();
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("TrashBin"))
+        {
+            isNearTrash = false;
+            nearbyTrashBin = null;
+        }
+    }
 }

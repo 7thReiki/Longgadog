@@ -35,7 +35,7 @@ public class AssemblyStation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(IsAssemblyComplete() && currentCustomer != null && !currentCustomer.isServed)
+        if (IsAssemblyComplete() && currentCustomer != null && !currentCustomer.isServed)
         {
             ServeCustomer();
         }
@@ -47,22 +47,32 @@ public class AssemblyStation : MonoBehaviour
         {
             bunOnStation = item;
             item.transform.position = bunSpot.position;
-            /*item.transform.SetParent(bunSpot);*/
+            DisableItemCollider(item);  // Disable collider after placing
         }
         else if (item.CompareTag("CookedHotdog") && hotdogOnStation == null && bunOnStation != null)
         {
             hotdogOnStation = item;
             item.transform.position = hotdogSpot.position;
-            /*item.transform.SetParent(hotdogSpot);*/
+            DisableItemCollider(item);  // Disable collider after placing
         }
         else if ((item.CompareTag("Ketchup") || item.CompareTag("Mustard")) && condimentOnStation == null && hotdogOnStation != null)
         {
             condimentOnStation = item;
             item.transform.position = condimentSpot.position;
+            DisableItemCollider(item);  // Disable collider after placing
         }
         else
         {
-            Debug.Log("Cannot place this item here or item already exists. ");
+            Debug.Log("Cannot place this item here or item already exists.");
+        }
+    }
+
+    private void DisableItemCollider(GameObject item)
+    {
+        Collider2D collider = item.GetComponent<Collider2D>();
+        if (collider != null)
+        {
+            collider.enabled = false; // Disable the collider to prevent interaction
         }
     }
 
@@ -98,7 +108,6 @@ public class AssemblyStation : MonoBehaviour
         // Reset the assembly station for the next order
         ResetStation();
     }
-
 
     private void ResetStation()
     {

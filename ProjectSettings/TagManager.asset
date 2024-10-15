@@ -12,6 +12,15 @@ TagManager:
   - CookedBun
   - Ketchup
   - Mustard
+  - RawBun
+  - RawHotdog
+  - GrillStation
+  - TrashBin
+  - BurntHotdog
+  - BurntBun
+  - Burnt
+  - Counter
+  - Customer
   layers:
   - Default
   - TransparentFX
