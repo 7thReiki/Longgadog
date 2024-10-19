@@ -26,6 +26,9 @@ public class PlayerMovement : MonoBehaviour
         movement.y = Input.GetAxisRaw(InputNameVertical);
         movement = movement.normalized;
 
+        animator.SetFloat("W_Horizontal", movement.x);
+        animator.SetFloat("W_Vertical", movement.y);
+
         // Update animator parameters if animator is assigned
         if (movement != Vector2.zero && animator != null)
         {
